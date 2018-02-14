@@ -1,0 +1,11 @@
+3.0.0 (April 21, 2017)
+-----------------------
+ - Rewritten in Python, MEL is no longer supported
+ - Easily favor poses on different body parts in different ways using multiple sets
+ - Organize sets in collapsable custom groups (see screen shot)
+ - Control how sets and groups affect the ticks on the timeline
+ - Create an overshoot pose by enabling overshoot mode
+ - Adjust the UI to use sliders, buttons, or both
+ - Affect only the channels highlighted in the channel box for selected objects
+ - Easily work with character sets, either by using a single custom slider, or by importing character set info into tweenMachine
+ - Use Maya’s “special” tick color to identify keys made with tweenMachine
