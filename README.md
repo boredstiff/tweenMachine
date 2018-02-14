@@ -1,6 +1,7 @@
-TweenMachine
+# TweenMachine
+
 ---------------------
-###The easiest way to create breakdown poses in Maya
+### The easiest way to create breakdown poses in Maya
 
 Say you’re creating poses for your character with stepped keys, and have created key poses on frames 1 and 10.
 You want to make a breakdown pose on frame 7, but you want it to favor the first pose by 70%. The following comparison
