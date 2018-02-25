@@ -1,40 +1,16 @@
 """
 tweenMachine.py
-
-author:         Justin S Barrett
-
-description:    Tool for creating breakdown or "tween" keyframes between the
-                previous and next keys, using a slider to adjust the bias/weight
-                that the surrounding keys have over the new key.
-
-usage:          import tweenMachine
-                tweenMachine.start()
-
-revisions:
-    - 2013.04.12 - 3.0.0 - jbarrett
-        - Initial publish after conversion to Python
-    - 2015.05.22 - 3.0.0b1 - jbarrett
-        - First public beta release (limited feature set)
-    - 2015.07.11 - 3.0.0b1a - jbarrett
-        - Fixed: Overshoot mode reset properly from settings when restarting TM
-        - Fixed: When grabbing the global key tangent, make sure it's a string
-        - Fixed: If there are no curves to tween, force an empty list
-        - Changed: Disabled toolbar opt for Maya 2013 until a fix can be found
-    - 2016.06.07 - 3.0.0b1b - jbarrett
-        - Work around issue with keyTangent command in Maya 2016 Extension 2
-    - 2017.04.20 - 3.0.0b1c - jbarrett
-        - Added Help menu
-
-to-do:
-
 """
 
 # -------------------------------------------------------------------------
 # ----------------------------------------------------------- Imports -----
 
 # Built-in
-import os
+import contextlib
+import json
 import urllib2
+import webbrowser
+from threading import Thread
 import xml.etree.cElementTree as etree
 
 # Third-party
@@ -46,8 +22,10 @@ import maya.mel as mel
 # -------------------------------------------------------------------------
 # ----------------------------------------------------------- Globals -----
 
-__version__ = "3.0.0 b1c"
+__version__ = "3.0.0"
 MAYA_VERSION = mc.about(version=True)
+GITHUB_URL = 'https://github.com/alexwidener/tweenMachine'
+GITHUB_ISSUES_URL = 'https://github.com/alexwidener/tweenMachine/issues'
 
 
 # -------------------------------------------------------------------------
@@ -474,8 +452,8 @@ class TMWindowUI(object):
         # Import maya.cmds at root namespace for deferred commands
         mc.evalDeferred("import maya.cmds as mc")
         # Check for updates
-        if SETTINGS["update_check"]:
-            self.update_check()
+        # Spawn in a Thread so we don't have blocking if user is offline or response takes too long.
+        Thread(target=self.update_check, args=tuple()).start()
         # First get an instance of the main data class
         self.data = TMData()
         # Test adding a group
@@ -659,16 +637,12 @@ class TMWindowUI(object):
                     command=self._toggle_special_tick)
 
     def open_support(self, *args):
-        """
-        Open tweenMachine support in a browser
-        """
-        mc.launch(webPage="http://justinsbarrett.com/tweenMachine-support/")
+        """Open tweenMachine support in a browser"""
+        webbrowser.open(GITHUB_ISSUES_URL)
 
     def open_docs(self, *args):
-        """
-        Open tweenMachine docs in a browser
-        """
-        mc.launch(webPage="http://justinsbarrett.com/tweenMachine-docs-python/")
+        """Open tweenMachine docs in a browser"""
+        webbrowser.open(GITHUB_URL)
 
     def _add_group_prompt(self, *args):
         """
@@ -863,19 +837,15 @@ class TMWindowUI(object):
         """
         inactive()
 
-    def update_check(self):
-        """
-        Check for updates (or cancel update when cancel flag is set)
-        """
-        url = "http://www.justinsbarrett.com/tmupdate.php?tmquery=version"
-        link = urllib2.urlopen(url)
-        if link.getcode() == 200:
-            data = link.read()
-            if data.strip() != __version__:
-                mc.warning("A new version is available")
-            else:
-                print "Versions match"
-        link.close()
+    @staticmethod
+    def update_check():
+        """Check for available updates."""
+        url = 'https://api.github.com/repos/alexwidener/tweenMachine/releases/latest'
+        with contextlib.closing(urllib2.urlopen(url)) as response:
+            data = json.loads(response.read())
+            # TODO: When doing the Qt rework, add a QMessageBox
+            if data['tag_name'] > __version__:
+                print('A new version is available')
 
 
 class TMSetUI(object):
