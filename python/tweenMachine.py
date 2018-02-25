@@ -2,12 +2,13 @@
 tweenMachine.py
 """
 
-# -------------------------------------------------------------------------
-# ----------------------------------------------------------- Imports -----
-
 # Built-in
 import contextlib
 import json
+import logging
+import logging.config
+import os
+import tempfile
 import urllib2
 import webbrowser
 from threading import Thread
@@ -17,10 +18,6 @@ import xml.etree.cElementTree as etree
 import maya.cmds as mc
 import maya.mel as mel
 
-# Custom
-
-# -------------------------------------------------------------------------
-# ----------------------------------------------------------- Globals -----
 
 __version__ = "3.0.0"
 MAYA_VERSION = mc.about(version=True)
@@ -28,8 +25,70 @@ GITHUB_URL = 'https://github.com/alexwidener/tweenMachine'
 GITHUB_ISSUES_URL = 'https://github.com/alexwidener/tweenMachine/issues'
 
 
-# -------------------------------------------------------------------------
-# --------------------------------------------------------- Functions -----
+LOG = None
+
+
+def get_logger():
+    """Create a stream handler and a file handler. The file handler will only log warning and above.
+
+    Returns:
+        logging.Logger: The global instance of the logger.
+    """
+    global LOG
+
+    configuration = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'standard': {
+                'format': '%(asctime)s [%(levelname)s] %(message)s'
+            },
+            'file_format': {
+                'format': '%(asctime)s [%(levelname)-8s] %(message)s'
+            }
+        },
+        'handlers': {
+            'default': {
+                'level': 'INFO',
+                'formatter': 'standard',
+                'class': 'logging.StreamHandler'
+            },
+            'file_handler': {
+                'level': 'WARNING',
+                'formatter': 'file_format',
+                'class': 'logging.handlers.RotatingFileHandler',
+                'filename': 'tween_machine.log'
+            }
+        },
+        'loggers': {
+            '': {
+                'handlers': ['default', 'file_handler'],
+                'level': 'INFO',
+                'propagate': True,
+                'maxBytes': 2048,
+                'backupCount': 5
+            }
+        }
+    }
+
+    temp_dir = tempfile.gettempdir()
+    tween_machine_dir = os.path.join(temp_dir, 'tween_machine')
+    if not os.path.exists(tween_machine_dir):
+        os.makedirs(tween_machine_dir)
+
+    configuration['handlers']['file_handler']['filename'] = os.path.join(
+        tween_machine_dir, configuration['handlers']['file_handler']['filename'])
+
+    if not LOG:
+        LOG = logging.getLogger(__name__)
+        logging.config.dictConfig(configuration)
+
+    return LOG
+
+
+get_logger()
+LOG.setLevel(logging.INFO)
+
 
 def clear_menu(menu):
     """
@@ -74,7 +133,7 @@ def inactive():
     """
     Display a warning when a feature is not active
     """
-    mc.warning("This tweenMachine feature is not currently active.")
+    LOG.warn('This tweenMachine feature is not currently active.')
 
 
 def tween(bias, nodes=None):
@@ -170,9 +229,6 @@ def tween(bias, nodes=None):
         mc.setFocus(windowname)
 
 
-# -------------------------------------------------------------------------
-# ----------------------------------------------------------- Classes -----
-
 class TMData(object):
     """
     Core code for data organization (groups and sets)
@@ -193,11 +249,10 @@ class TMData(object):
             # If we have more than one, use the first one, but warn the user
             self.node = oldnodes[0]
             if len(oldnodes) > 1:
-                mc.warning("Multiple tweenMachine data nodes found.  Using"
-                           + self.node)
+                LOG.warn('Multiple tweenMachine data nodes found.  Using {}'.format(self.node))
             # If the data is in the old format (tmXML has children), convert it
             if mc.listRelatives(self.node, children=True):
-                print "# tweenMachine: Old data found.  Converting."
+                LOG.info('# tweenMachine: Old data found.  Converting.')
                 self.root = etree.XML("<tweenMachineData />")
                 self.tree = etree.ElementTree(self.root)
                 # Create base elements
@@ -743,8 +798,6 @@ class TMWindowUI(object):
     #    def window_name(self):
     #        return find_ui("window")
 
-    # ----- Character Sets ---------------------------------------------------#
-
     def _add_character_group(self, *args):
         """
         Add a group that will work with character set data
@@ -756,8 +809,6 @@ class TMWindowUI(object):
         Import character set data from scene
         """
         inactive()
-
-    # ----- UI Management ----------------------------------------------------#
 
     def set_ui_mode(self, mode=None):
         """
@@ -845,7 +896,7 @@ class TMWindowUI(object):
             data = json.loads(response.read())
             # TODO: When doing the Qt rework, add a QMessageBox
             if data['tag_name'] > __version__:
-                print('A new version is available')
+                LOG.info('A new version is available')
 
 
 class TMSetUI(object):
