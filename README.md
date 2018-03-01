@@ -38,7 +38,7 @@ Development was taken over by [Alex Widener](https://github.com/alexwidener) in 
 
 ## Installation
 
-Animators: Do not copy the file listed directly above, as tweenMachine is in active development and will be for the next few weeks. Instead, go to the Releases tab above the files, and download version 3.0.0.
+Animators: Do not copy the file listed directly above, as tweenMachine is in active development and will be for the next few weeks. Instead, go to the [Releases](https://github.com/alexwidener/tweenMachine/releases) tab above the files, and download version 3.0.0.
 
 Version 3.1.0 will come out at some point and be a restructure/rewrite/with many new features and a new look. Please check back for updates. 
 
