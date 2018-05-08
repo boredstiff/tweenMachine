@@ -101,7 +101,8 @@ the left will favor the new key toward the previous key, while values to the rig
 of the buttons will set the slider to a preset value. If you wish, you can highlight individual channels in Maya’s
 channel box, and tweenMachine will only perform its work on those channels, leaving others untouched.
 
-That covers the core operation of tweenMachine, but there are additional features available through various menu items. A full breakdown of all menu items is covered in the next section
+That covers the core operation of tweenMachine, but there are additional features available through various menu items.
+A full breakdown of all menu items is covered in the next section
 
 ### Menu
 
