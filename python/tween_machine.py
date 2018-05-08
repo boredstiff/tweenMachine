@@ -15,18 +15,19 @@ import webbrowser
 from threading import Thread
 import xml.etree.cElementTree as etree
 
-from maya.api import OpenMaya
 
 # Third-party
 import maya.cmds as mc
 import maya.mel as mel
+from maya.api import OpenMaya
+from PySide2 import QtWidgets, QtCore
 
+# import local modules
+import settings
+import dock_control
 
 __version__ = "3.0.0"
 MAYA_VERSION = mc.about(version=True)
-GITHUB_URL = 'https://github.com/alexwidener/tweenMachine'
-GITHUB_ISSUES_URL = 'https://github.com/alexwidener/tweenMachine/issues'
-
 
 LOG = None
 
@@ -75,7 +76,7 @@ def get_logger():
     }
 
     temp_dir = tempfile.gettempdir()
-    tween_machine_dir = os.path.join(temp_dir, 'tween_machine')
+    tween_machine_dir = os.path.join(temp_dir, settings.APP_NAME)
     if not os.path.exists(tween_machine_dir):
         os.makedirs(tween_machine_dir)
 
@@ -91,6 +92,31 @@ def get_logger():
 
 get_logger()
 LOG.setLevel(logging.INFO)
+
+
+class TweenMachineUI(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        super(TweenMachineUI, self).__init__(parent)
+
+        self.build_ui()
+        self.make_connections()
+
+    def build_ui(self):
+        main_layout = QtWidgets.QHBoxLayout(self)
+        self.setLayout(main_layout)
+
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        self.setContentsMargins(0, 0, 0, 0)
+
+        main_horizontal_layout = QtWidgets.QHBoxLayout()
+        mode_label = QtWidgets.QLabel('Mode: ')
+
+        main_layout.addLayout(main_horizontal_layout)
+        main_horizontal_layout.setAlignment(QtCore.Qt.AlignLeft)
+        main_horizontal_layout.addWidget(mode_label)
+
+    def make_connections(self):
+        pass
 
 
 def clear_menu(menu):
@@ -129,6 +155,8 @@ def start():
     """
     Convenience function to open the main tweenMachine instance
     """
+    ui = TweenMachineUI()
+    dock_control.dock_window(dock_control.MyDockingUI, ui)
     TMWindowUI()
 
 
@@ -697,11 +725,11 @@ class TMWindowUI(object):
 
     def open_support(self, *args):
         """Open tweenMachine support in a browser"""
-        webbrowser.open(GITHUB_ISSUES_URL)
+        webbrowser.open(settings.GITHUB_ISSUES_URL)
 
     def open_docs(self, *args):
         """Open tweenMachine docs in a browser"""
-        webbrowser.open(GITHUB_URL)
+        webbrowser.open(settings.GITHUB_URL)
 
     def _add_group_prompt(self, *args):
         """
