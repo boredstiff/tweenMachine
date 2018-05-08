@@ -23,8 +23,9 @@ from maya.api import OpenMaya
 from PySide2 import QtWidgets, QtCore
 
 # import local modules
-import settings
 import dock_control
+import settings
+import util
 
 __version__ = "3.0.0"
 MAYA_VERSION = mc.about(version=True)
@@ -94,10 +95,85 @@ get_logger()
 LOG.setLevel(logging.INFO)
 
 
+class TweenButton(QtWidgets.QPushButton):
+
+    value_changed = QtCore.Signal(int)
+
+    def __init__(self, parent=None, value=0):
+        super(TweenButton, self).__init__(parent)
+        self.value = value
+        self.clicked.connect(self.emit_value)
+        self.setFixedWidth(15)
+        self.setFixedHeight(10)
+        self.setToolTip(str(value))
+
+    def emit_value(self):
+        self.value_changed.emit(self.value)
+
+
+class TweenSlider(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        super(TweenSlider, self).__init__(parent)
+
+        main_layout = QtWidgets.QHBoxLayout()
+        self.setLayout(main_layout)
+
+        slider_layout = QtWidgets.QVBoxLayout()
+
+        self.slider_value_line = QtWidgets.QLineEdit('0')
+        main_layout.addWidget(self.slider_value_line)
+        main_layout.addLayout(slider_layout)
+        self.setContentsMargins(0, 0, 0, 0)
+        self.setMaximumWidth(200)
+        self.setMaximumHeight(75)
+
+        self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.slider.setRange(-100, 100)
+        slider_layout.addWidget(self.slider)
+
+        button_layout = QtWidgets.QHBoxLayout()
+        slider_layout.addLayout(button_layout)
+
+        self._create_array(button_layout)
+
+        self.make_connections()
+        self.show()
+
+    def _create_array(self, parent_layout):
+        distances = [-100, -75, -50, -25, 0, 25, 50, 75, 100]
+
+        for value in distances:
+            button = TweenButton(self, value)
+            parent_layout.addWidget(button)
+            button.value_changed.connect(self.button_was_changed)
+
+    def button_was_changed(self, value):
+        self.slider.setValue(value)
+
+    def make_connections(self):
+        self.slider.valueChanged.connect(self.my_value_changed)
+
+    def my_value_changed(self, value):
+        self.slider_value_line.setText(str(value))
+
+
 class TweenMachineUI(QtWidgets.QWidget):
+
+    MODE = {
+        'keys': 0,
+        'breakdowns': 1,
+    }
+
     def __init__(self, parent=None):
         super(TweenMachineUI, self).__init__(parent)
 
+        self.active_mode = self.MODE.get('keys')
+
+        self.keys_button = None
+        self.breakdowns_button = None
+        self.tween_slider = None
+
+        self.setMinimumHeight(200)
         self.build_ui()
         self.make_connections()
 
@@ -114,9 +190,37 @@ class TweenMachineUI(QtWidgets.QWidget):
         main_layout.addLayout(main_horizontal_layout)
         main_horizontal_layout.setAlignment(QtCore.Qt.AlignLeft)
         main_horizontal_layout.addWidget(mode_label)
+        self._create_array(main_horizontal_layout)
+
+        self.tween_slider = TweenSlider(self)
+        main_horizontal_layout.addWidget(self.tween_slider)
+        self.tween_slider.show()
+
+    def _create_array(self, parent_layout):
+        """Create a radio button array parented to the given parent_layout.
+
+        Args:
+            parent_layout (QtWidgets.QHboxLayout): The parent layout to which we parent the buttons.
+        """
+        button_group = util.create_radio_button_group(parent_layout)
+        self.keys_button = QtWidgets.QRadioButton('Keys')
+        self.breakdowns_button = QtWidgets.QRadioButton('Breakdowns')
+        for button in [self.keys_button, self.breakdowns_button]:
+            button_group.addWidget(button)
+        self.keys_button.setChecked(True)
 
     def make_connections(self):
-        pass
+        self.keys_button.clicked.connect(lambda: self.set_active_mode(self.MODE.get('keys')))
+        self.breakdowns_button.clicked.connect(lambda: self.set_active_mode(self.MODE.get('breakdowns')))
+
+    def set_active_mode(self, value):
+        """Set the currently active keying mode to the given value (passed in through a signal connection).
+
+        Args:
+            value (int): 0 represents key mode, 1 represents breakdown mode
+        """
+        print('Setting: {}'.format(value))
+        self.active_mode = value
 
 
 def clear_menu(menu):

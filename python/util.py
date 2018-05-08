@@ -33,3 +33,20 @@ def get_dialog():
     dialog.setFixedHeight(400)
     dialog.setContentsMargins(0, 0, 0, 0)
     return dialog
+
+
+def create_radio_button_group(parent_layout):
+    """Create a radio button group and parent it to the given parent_layout.
+
+    Args:
+        parent_layout (QtWidgets.QHboxLayout): The parent layout for this widget.
+
+    Returns:
+        QtWidgets.QHBoxLayout: The layout containing the button group.
+    """
+    widget = QtWidgets.QWidget()
+    widget_group = QtWidgets.QHBoxLayout()
+    widget_group.setContentsMargins(0, 0, 0, 0)
+    widget.setLayout(widget_group)
+    parent_layout.layout().addWidget(widget)
+    return widget_group
