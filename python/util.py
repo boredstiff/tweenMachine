@@ -35,11 +35,12 @@ def get_dialog():
     return dialog
 
 
-def create_radio_button_group(parent_layout):
+def create_radio_button_group(parent_layout, width=None):
     """Create a radio button group and parent it to the given parent_layout.
 
     Args:
         parent_layout (QtWidgets.QHboxLayout): The parent layout for this widget.
+        width (int): The width of the group that is made.
 
     Returns:
         QtWidgets.QHBoxLayout: The layout containing the button group.
@@ -47,6 +48,8 @@ def create_radio_button_group(parent_layout):
     widget = QtWidgets.QWidget()
     widget_group = QtWidgets.QHBoxLayout()
     widget_group.setContentsMargins(0, 0, 0, 0)
+    if width:
+        widget.setFixedWidth(width)
     widget.setLayout(widget_group)
     parent_layout.layout().addWidget(widget)
     return widget_group

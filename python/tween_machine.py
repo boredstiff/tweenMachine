@@ -95,6 +95,91 @@ get_logger()
 LOG.setLevel(logging.INFO)
 
 
+class RetimeButton(QtWidgets.QPushButton):
+    value_changed = QtCore.Signal(int)
+
+    def __init__(self, parent=None, value=0, width=15, height=15):
+        super(RetimeButton, self).__init__(parent)
+        self.value = value
+        self.clicked.connect(self.emit_value)
+        self.setFixedWidth(width)
+        self.setFixedHeight(height)
+        self.setToolTip(str(self.value))
+        self.setText(str(self.value))
+
+    def emit_value(self, value):
+        self.value_changed.emit(value)
+
+
+class RetimingWidget(QtWidgets.QWidget):
+
+    def __init__(self, parent=None):
+        super(RetimingWidget, self).__init__(parent)
+        main_layout = QtWidgets.QVBoxLayout()
+        self.setLayout(main_layout)
+        self.setFixedWidth(200)
+        top_button_layout = QtWidgets.QHBoxLayout()
+        top_button_layout.setContentsMargins(0, 0, 0, 0)
+        top_button_layout.setSpacing(2)
+
+        bottom_button_layout = QtWidgets.QHBoxLayout()
+        bottom_button_layout.setContentsMargins(0, 0, 0, 0)
+        bottom_button_layout.setSpacing(5)
+
+        bottom_left_layout = QtWidgets.QHBoxLayout()
+        bottom_left_layout.setContentsMargins(0, 0, 0, 0)
+        bottom_left_layout.setAlignment(QtCore.Qt.AlignLeft)
+        bottom_left_layout.setSpacing(2)
+
+        bottom_right_layout = QtWidgets.QHBoxLayout()
+        bottom_right_layout.setContentsMargins(0, 0, 0, 0)
+        bottom_right_layout.setAlignment(QtCore.Qt.AlignRight)
+        bottom_right_layout.setSpacing(2)
+
+        bottom_button_layout.addLayout(bottom_left_layout)
+        bottom_button_layout.addLayout(bottom_right_layout)
+
+        main_layout.addLayout(top_button_layout)
+        main_layout.addLayout(bottom_button_layout)
+
+        for i in range(1, 7):
+            button = RetimeButton(self, i, 30, 15)
+            top_button_layout.addWidget(button)
+
+        for i in [-2, -1]:
+            button = RetimeButton(self, i, 40, 15)
+            bottom_left_layout.addWidget(button)
+
+        for i in [1, 2]:
+            button = RetimeButton(self, i, 40, 15)
+            bottom_right_layout.addWidget(button)
+
+
+class KeysBreakdownWidget(QtWidgets.QWidget):
+
+    def __init__(self, parent=None):
+        super(KeysBreakdownWidget, self).__init__(parent)
+
+        main_layout = QtWidgets.QVBoxLayout()
+        self.setLayout(main_layout)
+
+        top_layout = QtWidgets.QHBoxLayout()
+        main_layout.addLayout(top_layout)
+
+        self.key_button = QtWidgets.QPushButton('K/R')
+        self.breakdown_button = QtWidgets.QPushButton('B/G')
+
+        top_layout.addWidget(self.key_button)
+        top_layout.addWidget(self.breakdown_button)
+
+        bottom_layout = QtWidgets.QHBoxLayout()
+        main_layout.addLayout(bottom_layout)
+
+        self.key_selected_attrs_combo = QtWidgets.QCheckBox()
+        self.key_selected_attrs_combo.setText('Key All')
+        bottom_layout.addWidget(self.key_selected_attrs_combo)
+
+
 class TweenButton(QtWidgets.QPushButton):
 
     value_changed = QtCore.Signal(int)
@@ -105,7 +190,8 @@ class TweenButton(QtWidgets.QPushButton):
         self.clicked.connect(self.emit_value)
         self.setFixedWidth(15)
         self.setFixedHeight(10)
-        self.setToolTip(str(value))
+        self.setFixedHeight(10)
+        self.setToolTip(str(self.value))
 
     def emit_value(self):
         self.value_changed.emit(self.value)
@@ -126,6 +212,7 @@ class TweenSlider(QtWidgets.QWidget):
         self.setContentsMargins(0, 0, 0, 0)
         self.setMaximumWidth(200)
         self.setMaximumHeight(75)
+        slider_layout.setSpacing(2)
 
         self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.slider.setRange(-100, 100)
@@ -172,37 +259,60 @@ class TweenMachineUI(QtWidgets.QWidget):
         self.keys_button = None
         self.breakdowns_button = None
         self.tween_slider = None
+        self.retiming_widget = None
 
-        self.setMinimumHeight(200)
         self.build_ui()
         self.make_connections()
 
     def build_ui(self):
         main_layout = QtWidgets.QHBoxLayout(self)
         self.setLayout(main_layout)
-
+        main_layout.setAlignment(QtCore.Qt.AlignLeft)
         main_layout.setContentsMargins(0, 0, 0, 0)
         self.setContentsMargins(0, 0, 0, 0)
 
         main_horizontal_layout = QtWidgets.QHBoxLayout()
-        mode_label = QtWidgets.QLabel('Mode: ')
-
         main_layout.addLayout(main_horizontal_layout)
+
+        mode_label = QtWidgets.QLabel('Mode: ')
         main_horizontal_layout.setAlignment(QtCore.Qt.AlignLeft)
         main_horizontal_layout.addWidget(mode_label)
-        self._create_array(main_horizontal_layout)
+
+        radio_layout = QtWidgets.QVBoxLayout()
+        main_horizontal_layout.addLayout(radio_layout)
+
+        radio_top_layout = QtWidgets.QHBoxLayout()
+        radio_layout.addLayout(radio_top_layout)
+
+        radio_bottom_layout = QtWidgets.QHBoxLayout()
+        radio_layout.addLayout(radio_bottom_layout)
+        self._create_keys_array(radio_top_layout)
+        self._create_override_ripple_array(radio_bottom_layout)
 
         self.tween_slider = TweenSlider(self)
         main_horizontal_layout.addWidget(self.tween_slider)
-        self.tween_slider.show()
 
-    def _create_array(self, parent_layout):
+        self.retiming_widget = RetimingWidget(self)
+        main_horizontal_layout.addWidget(self.retiming_widget)
+
+        self.keys_breakdowns_widget = KeysBreakdownWidget(self)
+        main_horizontal_layout.addWidget(self.keys_breakdowns_widget)
+
+    def _create_override_ripple_array(self, parent_layout):
+        button_group = util.create_radio_button_group(parent_layout, 140)
+        self.override_button = QtWidgets.QRadioButton('Overwrite')
+        self.ripple_button = QtWidgets.QRadioButton('Ripple')
+        for button in [self.override_button, self.ripple_button]:
+            button_group.addWidget(button)
+        self.override_button.setChecked(True)
+
+    def _create_keys_array(self, parent_layout):
         """Create a radio button array parented to the given parent_layout.
 
         Args:
             parent_layout (QtWidgets.QHboxLayout): The parent layout to which we parent the buttons.
         """
-        button_group = util.create_radio_button_group(parent_layout)
+        button_group = util.create_radio_button_group(parent_layout, 140)
         self.keys_button = QtWidgets.QRadioButton('Keys')
         self.breakdowns_button = QtWidgets.QRadioButton('Breakdowns')
         for button in [self.keys_button, self.breakdowns_button]:

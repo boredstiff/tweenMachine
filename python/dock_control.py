@@ -17,7 +17,7 @@ import settings
 def dock_window(dialog_class, widget):
     """Dock the UI to a workspace control."""
     try:
-        cmds.deleteUI(dialog_class.CONTROL_NAME)
+        cmds.deleteUI(settings.APP_NAME)
     except:
         pass
 
@@ -28,7 +28,7 @@ def dock_window(dialog_class, widget):
         initialWidth=300,
         minimumWidth=True,
         widthProperty='preferred',
-        label=dialog_class.DOCK_LABEL_NAME)
+        label=settings.APP_TITLE)
 
     # now lets get a C++ pointer to it using OpenMaya
     control_widget = OpenMayaUI.MQtUtil.findControl(settings.APP_NAME)
