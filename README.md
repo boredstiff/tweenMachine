@@ -36,6 +36,9 @@ Development was taken over by [Alex Widener](https://github.com/alexwidener) in 
 |Maya Shelf Icon                   | [Keith Lango](http://keithlango.squarespace.com/)   |
 
 
+## Updates
+Subscribe to very infrequent and non-spammy email updates about new versions [at this link](https://github.us18.list-manage.com/subscribe?u=21f14bb7b1c884b7f2d517b57&id=a966b6ab32).
+
 ## Installation
 
 Animators: Do not copy the file listed directly above, as tweenMachine is in active development and will be for the next few weeks. Instead, go to the [Releases](https://github.com/alexwidener/tweenMachine/releases) tab above the files, and download version 3.0.0.
