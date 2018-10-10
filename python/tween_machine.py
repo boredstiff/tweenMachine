@@ -15,8 +15,10 @@ import webbrowser
 
 
 # Third-party
-import maya.cmds as mc
-from maya.api import OpenMaya, OpenMayaAnim
+from maya import cmds
+from maya.api import _OpenMaya_py2 as OpenMaya
+from maya.api import _OpenMayaAnim_py2 as OpenMayaAnim
+# from maya.api import OpenMaya, OpenMayaAnim
 from PySide2 import QtWidgets, QtCore
 
 # import local modules
@@ -25,7 +27,6 @@ import settings
 import util
 
 __version__ = "3.1.0-alpha-1"
-MAYA_VERSION = mc.about(version=True)
 
 LOG = None
 
@@ -34,6 +35,50 @@ KEY_COLORS = [
     ('blue', 'rgb(0, 0, 255)'),
     ('green', 'rgb(0, 255, 0)')
 ]
+
+
+def tween(bias, nodes=None):
+    """
+
+    Args:
+        bias (float):
+        nodes (list):  The specified nodes
+
+    Returns:
+
+    """
+    if isinstance(nodes, list) and len(nodes) == 0:
+        nodes = None
+
+    if nodes is None:
+        nodes = OpenMaya.MGlobal.getActiveSelectionList()
+
+    if not nodes.length():
+        return
+
+    current_time = OpenMayaAnim.MAnimControl.currentTime()
+    # I know I can query locked via OM, not sure about selected?
+    attributes = cmds.channelBox(
+        'mainChannelBox',
+        query=True,
+        selectedMainAttributes=True)
+
+    selection_iterator = OpenMaya.MItSelectionList(nodes)
+    dependency_fn = OpenMaya.MFnDependencyNode()
+
+    # Loop through selected attributes, need to finish.
+    # while not node_iterator.isDone():
+    #     node = node_iterator.getDependNode()
+    #     dependency_fn.setObject(node)
+    #     for attribute in attributes:
+    #         if dependency_fn.hasAttribute(attribute):
+    #
+    #     node_iterator.next()
+
+    # I can use the thing I made at work to just get everything from the selection
+    # curves =
+
+
 
 
 def update_check():
@@ -47,7 +92,7 @@ def update_check():
         data = json.loads(response.read())
         # TODO: When doing the Qt rework, add a QMessageBox
         if data['tag_name'] > __version__:
-            LOG.info('A new version is available')
+            LOG.info('A new version of Tween Machine is available')
             return data['tag_name']
     return None
 
@@ -258,11 +303,11 @@ class TweenSlider(QtWidgets.QWidget):
         self.slider.setValue(value)
 
     def make_connections(self):
-        self.slider.valueChanged.connect(self.my_value_changed)
+        self.slider.valueChanged.connect(self.value_changed)
 
-    def my_value_changed(self, value):
+    def value_changed(self, value):
         self.slider_value_line.setText(str(value))
-        set_key((value + 100) / 200.0)
+        tween((value + 100) / 200.0)
 
 
 class TweenMachineUI(QtWidgets.QWidget):
@@ -409,15 +454,39 @@ class HelpWidget(QtWidgets.QWidget):
 
         layout = QtWidgets.QVBoxLayout()
         self.setLayout(layout)
+        self.about_button = QtWidgets.QPushButton('Help')
 
         self.support_button = QtWidgets.QPushButton('Support')
         self.documentation_button = QtWidgets.QPushButton('Docs')
 
+        layout.addWidget(self.about_button)
+        self.make_connections()
+
+    def make_connections(self):
+        self.support_button.clicked.connect(self.open_support)
+        self.documentation_button.clicked.connect(self.open_docs)
+        self.about_button.clicked.connect(self.show_about_dialog)
+
+    def show_about_dialog(self):
+        dialog = QtWidgets.QDialog(self)
+        dialog.setWindowTitle('Tween Machine Help')
+        layout = QtWidgets.QVBoxLayout()
+
+        version_label = QtWidgets.QLabel('Version: {}'.format('version_number_here'))
+        author_label = QtWidgets.QLabel('Authors: {}'.format('Alex Widener, Justin Barrett'))
+        contact_label = QtWidgets.QLabel('github@alexwidener.com')
+        note_label = QtWidgets.QLabel('Please file an issue by clicking "Support" before sending an e-mail')
+
+        layout.addWidget(version_label)
+        layout.addWidget(author_label)
+        layout.addWidget(contact_label)
+        layout.addWidget(note_label)
+
         layout.addWidget(self.support_button)
         layout.addWidget(self.documentation_button)
 
-        self.support_button.clicked.connect(self.open_support)
-        self.documentation_button.clicked.connect(self.open_docs)
+        dialog.setLayout(layout)
+        dialog.show()
 
     @staticmethod
     def open_support():
@@ -426,23 +495,6 @@ class HelpWidget(QtWidgets.QWidget):
     @staticmethod
     def open_docs():
         webbrowser.open(settings.GITHUB_URL)
-
-
-def set_key(bias, nodes=None):
-    """Create the in-between key(s) on the specified nodes"""
-    print('bias: {}'.format(bias))
-
-    if not nodes:
-        nodes = OpenMaya.MGlobal.getActiveSelectionList()
-
-    if not nodes.length():
-        return
-
-    anim_control = OpenMayaAnim.MAnimControl()
-    current_time = anim_control.currentTime()
-    print(current_time)
-
-    # Find the current frame, where the new key will be added
 
 
 def start():
