@@ -139,6 +139,48 @@ def inactive():
     LOG.warn('This tweenMachine feature is not currently active.')
 
 
+def getCurves(pullfrom):
+    """
+    Returns a list of only selected curves or all curves if no curves selected.
+    """
+
+    curves = getSelected(pullfrom)
+    if curves:
+        return curves
+    else:
+        return mc.keyframe(pullfrom, q=True, name=True)
+
+
+def getSelected(pullfrom=None):
+    """
+    Returns a list of curves that are any keys selected.
+    """
+
+    selection = []
+
+    if not pullfrom:
+        curves = mc.keyframe(q=True, name=True, selected=True) or []
+    else:
+        curves = mc.keyframe(pullfrom, q=True, name=True, selected=True) or []
+
+    for curve in curves:
+        try:
+            # Trace the output of  the curve to find the attribute.
+            # attr = getFirstConnection(curve, 'output', outAttr=1, findAttribute=1)
+            attrs = mc.listConnections(
+                '{}.output'.format(curve),
+                d=True,
+                s=False,
+                skipConversionNodes=True,
+                plugs=True) or []
+
+            selection += attrs
+
+        except AttributeError:
+            pass
+
+    return selection
+
 def tween(bias, nodes=None):
     """
     Create the in-between key(s) on the specified nodes
@@ -154,9 +196,16 @@ def tween(bias, nodes=None):
         pullfrom = mc.ls(sl=True)
         if not pullfrom:
             return
-    # If attributes are selected, use them to build curve node list
+
+    selected_curves = getSelected(pullfrom)
     attributes = mc.channelBox("mainChannelBox", q=True, sma=True)
-    if attributes:
+
+    # If any curves are selected, use them first
+    if selected_curves:
+        curves = selected_curves
+
+    # If attributes are selected, use them to build curve node second
+    elif attributes:
         curves = []
         for attr in attributes:
             for node in pullfrom:
@@ -167,9 +216,10 @@ def tween(bias, nodes=None):
                 if not tmp:
                     continue
                 curves += tmp
+
     # Otherwise get curves for all nodes
     else:
-        curves = mc.keyframe(pullfrom, q=True, name=True)
+        curves = getCurves(pullfrom)
     mc.waitCursor(state=True)
     # Wrap the main operation in a try/except to prevent the waitcursor from
     # sticking if something should fail
