@@ -10,10 +10,15 @@ import logging.config
 import os
 import sys
 import tempfile
-import urllib2
 import webbrowser
 from threading import Thread
 import xml.etree.cElementTree as etree
+
+# Python 2/3 compatibility
+try:
+    from urllib.request import urlopen
+except ImportError:
+    from urllib2 import urlopen
 
 from maya.api import OpenMaya
 
@@ -21,12 +26,10 @@ from maya.api import OpenMaya
 import maya.cmds as mc
 import maya.mel as mel
 
-
-__version__ = "3.0.0"
+__version__ = "3.0.1"
 MAYA_VERSION = mc.about(version=True)
 GITHUB_URL = 'https://github.com/alexwidener/tweenMachine'
 GITHUB_ISSUES_URL = 'https://github.com/alexwidener/tweenMachine/issues'
-
 
 LOG = None
 
@@ -525,7 +528,6 @@ class TMWindowUI(object):
         self.set_ui_mode()
         self._build_all_groups()
 
-
         # Kick off scriptJobs
         ##scriptJob -p tweenMachineWin -e "SceneOpened" "deleteUI tweenMachineWin; tweenMachine;";
         # scriptJob -p tweenMachineWin -e "NewSceneOpened" "deleteUI tweenMachineWin;";
@@ -896,7 +898,7 @@ class TMWindowUI(object):
     def update_check():
         """Check for available updates."""
         url = 'https://api.github.com/repos/alexwidener/tweenMachine/releases/latest'
-        with contextlib.closing(urllib2.urlopen(url)) as response:
+        with contextlib.closing(urlopen(url)) as response:
             data = json.loads(response.read())
             # TODO: When doing the Qt rework, add a QMessageBox
             if data['tag_name'] > __version__:
@@ -1200,6 +1202,7 @@ class TMSettings(dict):
 # ----------------------------------------------------------- Default -----
 
 SETTINGS = TMSettings()
+
 
 # if __name__ == "__main__":
 #     # Create a instance of the settings class, then kick off the main window
