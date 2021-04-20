@@ -10,7 +10,7 @@ import logging.config
 import os
 import sys
 import tempfile
-import urllib2
+import six.moves.urllib.request
 import webbrowser
 from threading import Thread
 import xml.etree.cElementTree as etree
@@ -896,7 +896,7 @@ class TMWindowUI(object):
     def update_check():
         """Check for available updates."""
         url = 'https://api.github.com/repos/alexwidener/tweenMachine/releases/latest'
-        with contextlib.closing(urllib2.urlopen(url)) as response:
+        with contextlib.closing(six.moves.urllib.request.urlopen(url)) as response:
             data = json.loads(response.read())
             # TODO: When doing the Qt rework, add a QMessageBox
             if data['tag_name'] > __version__:
@@ -1113,6 +1113,8 @@ class TMButtonRowData(object):
             return self.buttons[self.iter_index]
         except:
             raise StopIteration
+
+    __next__ = next
 
 
 class TMButtonData(object):
